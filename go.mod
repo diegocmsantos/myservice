@@ -2,7 +2,11 @@ module github.com/diegocmsantos/myservice
 
 go 1.17
 
-require go.uber.org/zap v1.20.0
+require (
+	github.com/ardanlabs/conf/v2 v2.2.0
+	go.uber.org/automaxprocs v1.4.0
+	go.uber.org/zap v1.20.0
+)
 
 require (
 	go.uber.org/atomic v1.7.0 // indirect
