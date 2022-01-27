@@ -9,6 +9,7 @@ import (
 
 	"github.com/diegocmsantos/myservice/app/services/sales-api/handlers/debug/checkgrp"
 	"github.com/diegocmsantos/myservice/app/services/sales-api/handlers/v1/testgrp"
+	"github.com/diegocmsantos/myservice/business/web/mid"
 	"github.com/diegocmsantos/myservice/foundation/web"
 	"go.uber.org/zap"
 )
@@ -61,6 +62,7 @@ func APIMux(cfg APIMuxConfig) *web.App {
 	// Construct the web.App which holds all routes as well as common Middleware.
 	app := web.NewApp(
 		cfg.Shutdown,
+		mid.Logger(cfg.Log),
 	)
 
 	// Load the v1 routes.
