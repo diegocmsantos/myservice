@@ -3,9 +3,11 @@ package testgrp
 
 import (
 	"context"
+	"errors"
 	"math/rand"
 	"net/http"
 
+	"github.com/diegocmsantos/myservice/business/sys/validate"
 	"github.com/diegocmsantos/myservice/foundation/web"
 	"go.uber.org/zap"
 )
@@ -20,9 +22,9 @@ func (h Handlers) Test(ctx context.Context, w http.ResponseWriter, r *http.Reque
 
 	if n := rand.Intn(100); n%2 == 0 {
 		//return errors.New("untrusted error")
-		//return validate.NewRequestError(errors.New("trusted error"), http.StatusBadRequest)
+		return validate.NewRequestError(errors.New("trusted error"), http.StatusBadRequest)
 		// return web.NewShutdownError("restart service")
-		panic("testing panic")
+		// panic("testing panic")
 	}
 
 	status := struct {
