@@ -2,6 +2,7 @@
 package testgrp
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 
@@ -14,7 +15,7 @@ type Handlers struct {
 }
 
 // Test handler is for development
-func (h Handlers) Test(w http.ResponseWriter, r *http.Request) {
+func (h Handlers) Test(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 	status := struct {
 		Status string
 	}{
@@ -25,4 +26,6 @@ func (h Handlers) Test(w http.ResponseWriter, r *http.Request) {
 	statusCode := http.StatusOK
 	h.Log.Infow("readiness", "statusCode", statusCode, "method", r.Method, "path",
 		r.URL.Path, "remoteaddr", r.RemoteAddr)
+
+	return nil
 }
