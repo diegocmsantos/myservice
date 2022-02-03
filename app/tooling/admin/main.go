@@ -81,7 +81,6 @@ func genToken() error {
 	fmt.Println("============ TOKEN BEGIN ============")
 	fmt.Println(tokenStr)
 	fmt.Println("============ TOKEN   END ============")
-	fmt.Println("\n")
 
 	// ============================================================
 
