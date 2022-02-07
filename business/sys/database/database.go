@@ -20,6 +20,8 @@ import (
 var (
 	ErrDBNotFound        = errors.New("not found")
 	ErrDBDuplicatedEntry = errors.New("duplicated entry")
+	ErrInvalidID         = errors.New("invalid ID")
+	ErrForbidden         = errors.New("Forbidden")
 )
 
 // Config is the required properties to use the database.
