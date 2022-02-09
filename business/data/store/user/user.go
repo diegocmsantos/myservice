@@ -12,20 +12,22 @@ import (
 	"github.com/diegocmsantos/myservice/business/sys/auth"
 	"github.com/diegocmsantos/myservice/business/sys/database"
 	"github.com/diegocmsantos/myservice/business/sys/validate"
+	"github.com/golang-jwt/jwt/v4"
 	"github.com/jmoiron/sqlx"
+	"github.com/lib/pq"
 	"go.uber.org/zap"
 	"golang.org/x/crypto/bcrypt"
 )
 
 // User represents an individual user.
 type User struct {
-	ID           string    `json:"id"`
-	Name         string    `json:"name"`
-	Email        string    `json:"email"`
-	Roles        []string  `json:"roles"`
-	PasswordHash []byte    `json:"-"`
-	DateCreated  time.Time `json:"date_created"`
-	DateUpdated  time.Time `json:"date_updated"`
+	ID           string         `db:"user_id" json:"id"`
+	Name         string         `db:"name" json:"name"`
+	Email        string         `db:"email" json:"email"`
+	Roles        pq.StringArray `db:"roles" json:"roles"`
+	PasswordHash []byte         `db:"password_hash" json:"-"`
+	DateCreated  time.Time      `db:"date_created" json:"date_created"`
+	DateUpdated  time.Time      `db:"date_updated" json:"date_updated"`
 }
 
 // NewUser contains information needed to create a new User.
@@ -111,8 +113,8 @@ func (s Store) Update(ctx context.Context, claims auth.Claims, userID string, uu
 
 	usr, err := s.QueryByID(ctx, claims, userID)
 	if err != nil {
-		if errors.Is(err, database.ErrDBNotFound) {
-			return database.ErrDBNotFound
+		if errors.Is(err, database.ErrNotFound) {
+			return database.ErrNotFound
 		}
 		return fmt.Errorf("updating user userID[%s]: %w", userID, err)
 	}
@@ -205,8 +207,8 @@ func (s Store) Query(ctx context.Context, pageNumber, rowsPerPage int) ([]User, 
 
 	var usrs []User
 	if err := database.NamedQuerySlice(ctx, s.log, s.db, q, data, &usrs); err != nil {
-		if err == database.ErrDBNotFound {
-			return nil, database.ErrDBNotFound
+		if err == database.ErrNotFound {
+			return nil, database.ErrNotFound
 		}
 		return nil, fmt.Errorf("selecting users: %w", err)
 	}
@@ -285,19 +287,45 @@ func (s Store) QueryByEmail(ctx context.Context, claims auth.Claims, email strin
 // Authenticate finds a user by their email and verifies their password. On
 // success it returns a Claims User representing this user. The claims can be
 // used to generate a token for future authentication.
-func (s Store) Authenticate(ctx context.Context, claims auth.Claims, now time.Time, email, password string) (auth.Claims, error) {
-	dbUsr, err := s.QueryByEmail(ctx, claims, email)
-	if err != nil {
-		if errors.Is(err, database.ErrDBNotFound) {
-			return auth.Claims{}, database.ErrDBNotFound
+func (s Store) Authenticate(ctx context.Context, now time.Time, email, password string) (auth.Claims, error) {
+	data := struct {
+		Email string `db:"email"`
+	}{
+		Email: email,
+	}
+
+	const q = `
+	SELECT
+		*
+	FROM
+		users
+	WHERE
+		email = :email`
+
+	var usr User
+	if err := database.NamedQueryStruct(ctx, s.log, s.db, q, data, &usr); err != nil {
+		if err == database.ErrNotFound {
+			return auth.Claims{}, database.ErrNotFound
 		}
-		return auth.Claims{}, fmt.Errorf("query: %w", err)
+		return auth.Claims{}, fmt.Errorf("selecting user[%q]: %w", email, err)
 	}
 
 	// Compare the provided password with the saved hash. Use the bcrypt
 	// comparison function so it is cryptographically secure.
-	if err := bcrypt.CompareHashAndPassword(dbUsr.PasswordHash, []byte(password)); err != nil {
+	if err := bcrypt.CompareHashAndPassword(usr.PasswordHash, []byte(password)); err != nil {
 		return auth.Claims{}, database.ErrAuthenticationFailure
+	}
+
+	// If we are this far the request is valid. Create some claims for the user
+	// and generate their token.
+	claims := auth.Claims{
+		StandardClaims: jwt.StandardClaims{
+			Issuer:    "service project",
+			Subject:   usr.ID,
+			ExpiresAt: time.Now().Add(time.Hour).Unix(),
+			IssuedAt:  time.Now().UTC().Unix(),
+		},
+		Roles: usr.Roles,
 	}
 
 	return claims, nil

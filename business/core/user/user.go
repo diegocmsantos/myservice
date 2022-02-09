@@ -103,7 +103,7 @@ func (c Core) QueryByID(ctx context.Context, claims auth.Claims, userID string) 
 
 	dbUsr, err := c.user.QueryByID(ctx, claims, userID)
 	if err != nil {
-		if errors.Is(err, database.ErrDBNotFound) {
+		if errors.Is(err, database.ErrNotFound) {
 			return user.User{}, ErrNotFound
 		}
 		return user.User{}, fmt.Errorf("query: %w", err)
@@ -121,7 +121,7 @@ func (c Core) QueryByEmail(ctx context.Context, claims auth.Claims, email string
 
 	dbUsr, err := c.user.QueryByEmail(ctx, claims, email)
 	if err != nil {
-		if errors.Is(err, database.ErrDBNotFound) {
+		if errors.Is(err, database.ErrNotFound) {
 			return user.User{}, ErrNotFound
 		}
 		return user.User{}, fmt.Errorf("query: %w", err)
@@ -135,11 +135,11 @@ func (c Core) QueryByEmail(ctx context.Context, claims auth.Claims, email string
 // Authenticate finds a user by their email and verifies their password. On
 // success it returns a Claims User representing this user. The claims can be
 // used to generate a token for future authentication.
-func (c Core) Authenticate(ctx context.Context, claims auth.Claims, now time.Time, email, password string) (auth.Claims, error) {
+func (c Core) Authenticate(ctx context.Context, now time.Time, email, password string) (auth.Claims, error) {
 
 	// PERFORM PRE BUSINESS OPERATIONS
 
-	claims, err := c.user.Authenticate(ctx, claims, now, email, password)
+	claims, err := c.user.Authenticate(ctx, now, email, password)
 	if err != nil {
 		return auth.Claims{}, fmt.Errorf("query: %w", err)
 	}

@@ -12,7 +12,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/diegocmsantos/myservice/business/data/dbschema"
+	"github.com/diegocmsantos/myservice/business/data/schema"
 	"github.com/diegocmsantos/myservice/business/sys/database"
 	"github.com/golang-jwt/jwt/v4"
 )
@@ -45,7 +45,7 @@ func seed() error {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	if err := dbschema.Seed(ctx, db); err != nil {
+	if err := schema.Seed(ctx, db); err != nil {
 		return fmt.Errorf("seed database: %w", err)
 	}
 
@@ -72,7 +72,7 @@ func migrate() error {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	if err := dbschema.Migrate(ctx, db); err != nil {
+	if err := schema.Migrate(ctx, db); err != nil {
 		return fmt.Errorf("migrate database: %w", err)
 	}
 
